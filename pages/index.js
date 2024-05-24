@@ -7,10 +7,10 @@ export default function Home() {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const localStreamRef = useRef(null);
-  const roomId = "my-room";
+  const roomId = { roomID: "my-room", id: 10 };
 
   useEffect(() => {
-    const socket = io("https://socket-server-fhra.onrender.com");
+    const socket = io("http://localhost:4000");
     setSocket(socket);
 
     socket.on("signal", async (data) => {
