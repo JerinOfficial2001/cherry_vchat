@@ -10,7 +10,7 @@ export default function Home() {
   const roomId = "my-room";
 
   useEffect(() => {
-    const socket = io("http://localhost:4000");
+    const socket = io("https://socket-server-fhra.onrender.com");
     setSocket(socket);
 
     socket.on("signal", async (data) => {
