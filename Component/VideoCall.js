@@ -10,7 +10,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import { Box, Button, Grid, IconButton } from "@mui/material";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useRouter } from "next/router";
-import { Assignment } from "@mui/icons-material";
+import { Assignment, Share } from "@mui/icons-material";
 
 const VideoCall = ({ roomID }) => {
   const [videoEnabled, setVideoEnabled] = useState(true);
@@ -117,8 +117,15 @@ const VideoCall = ({ roomID }) => {
       }
     }
   };
-  const { query } = useRouter();
+  const router = useRouter();
+  const message = `Cherry Vchat Meeting Link: ${router.pathname}`;
 
+  const handleClick = () => {
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
   return (
     <Box
       sx={{
@@ -135,13 +142,17 @@ const VideoCall = ({ roomID }) => {
             ref={userVideoRef}
             autoPlay
             playsInline
-            style={{ transform: "scaleX(-1)", width: "300px" }}
+            style={{
+              transform: "scaleX(-1)",
+              width: "300px",
+              borderRadius: "10px",
+            }}
           />
         </Grid>
         {peers.map((peer, index) => {
           return (
             <Grid key={index} item lg={3} md={3} sm={6} xs={12}>
-              <Video peer={peer} style={{ width: "300px" }} />
+              <Video peer={peer} />
             </Grid>
           );
         })}
@@ -164,9 +175,12 @@ const VideoCall = ({ roomID }) => {
         >
           {audioEnabled ? <MicIcon /> : <MicOffIcon />}
         </IconButton>
-        <CopyToClipboard text={query?.id}>
+        <IconButton onClick={handleClick}>
+          <Share />
+        </IconButton>
+        <CopyToClipboard text={router?.query?.id}>
           <Button
-            variant="contained"
+            variant="outlined"
             color="primary"
             startIcon={<Assignment fontSize="large" />}
           >
@@ -189,7 +203,14 @@ const Video = ({ peer }) => {
     });
   }, [peer]);
 
-  return <video ref={ref} autoPlay playsInline />;
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      playsInline
+      style={{ width: "300px", borderRadius: "10px" }}
+    />
+  );
 };
 
 export default VideoCall;
