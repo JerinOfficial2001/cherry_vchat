@@ -103,7 +103,7 @@ const VideoCall = ({ roomID }) => {
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
-        setVideoEnabled(!videoEnabled);
+        setVideoEnabled(videoTrack.enabled);
       }
     }
   };
@@ -113,7 +113,7 @@ const VideoCall = ({ roomID }) => {
       const audioTrack = stream.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
-        setAudioEnabled(!audioEnabled);
+        setAudioEnabled(audioTrack.enabled);
       }
     }
   };
@@ -135,32 +135,79 @@ const VideoCall = ({ roomID }) => {
         flexDirection: "column",
       }}
     >
-      <Grid sx={{ width: "100%" }} container>
+      <Grid
+        sx={{ width: "100%", padding: 1, paddingBottom: 3 }}
+        container
+        rowSpacing={1}
+        columnSpacing={1}
+      >
         <Grid item lg={3} md={3} sm={6} xs={12}>
-          <video
-            muted
-            ref={userVideoRef}
-            autoPlay
-            playsInline
-            style={{
-              transform: "scaleX(-1)",
-              width: "300px",
+          <Box
+            sx={{
+              width: { lg: "300px", md: "300px", sm: "100%", xs: "100%" },
+              height: {
+                lg: "300px",
+                md: "300px",
+                sm: peers.length > 0 ? "150px" : "100%",
+                xs: peers.length > 0 ? "150px" : "100%",
+              },
               borderRadius: "10px",
+              background: "black",
+              paddingY: 1,
             }}
-          />
+          >
+            <video
+              muted
+              ref={userVideoRef}
+              autoPlay
+              playsInline
+              style={{
+                transform: "scaleX(-1)",
+                width: "100%",
+                borderRadius: "10px",
+                height: "100%",
+              }}
+            />
+          </Box>
         </Grid>
         {peers.map((peer, index) => {
           return (
-            <Grid key={index} item lg={3} md={3} sm={6} xs={12}>
+            <Grid
+              sx={{
+                height: {
+                  lg: "300px",
+                  md: "300px",
+                  sm: "150px",
+                  xs: "150px",
+                },
+              }}
+              key={index}
+              item
+              lg={3}
+              md={3}
+              sm={6}
+              xs={12}
+            >
               <Video peer={peer} />
             </Grid>
           );
         })}
       </Grid>
 
-      <Box>
+      <Box
+        sx={{
+          bottom: 0,
+          position: "sticky",
+          background: "white",
+          width: "100%",
+          paddingY: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <IconButton
-          sx={{ color: !videoEnabled ? "red" : "white" }}
+          sx={{ color: !videoEnabled ? "red" : "black" }}
           variant="contained"
           color="primary"
           onClick={toggleVideo}
@@ -168,7 +215,7 @@ const VideoCall = ({ roomID }) => {
           {videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
         </IconButton>
         <IconButton
-          sx={{ color: !audioEnabled ? "red" : "white" }}
+          sx={{ color: !audioEnabled ? "red" : "black" }}
           variant="contained"
           color="primary"
           onClick={toggleAudio}
@@ -204,12 +251,27 @@ const Video = ({ peer }) => {
   }, [peer]);
 
   return (
-    <video
-      ref={ref}
-      autoPlay
-      playsInline
-      style={{ width: "300px", borderRadius: "10px" }}
-    />
+    <Box
+      sx={{
+        width: {
+          lg: "300px",
+          md: "300px",
+          sm: "100%",
+          xs: "100%",
+        },
+        height: "100%",
+        borderRadius: "10px",
+        background: "black",
+        paddingY: 1,
+      }}
+    >
+      <video
+        ref={ref}
+        autoPlay
+        playsInline
+        style={{ width: "100%", height: "100%", borderRadius: "10px" }}
+      />
+    </Box>
   );
 };
 

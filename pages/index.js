@@ -31,6 +31,12 @@ export default function Home() {
         justifyContent: "center",
         height: "100vh",
         gap: 2,
+        flexDirection: {
+          lg: "row",
+          md: "row",
+          sm: "row",
+          xs: "column",
+        },
       }}
     >
       <Button
