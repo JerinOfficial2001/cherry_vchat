@@ -121,7 +121,7 @@ function Vcall() {
                 muted
                 ref={myVideo}
                 autoPlay
-                style={{ width: "300px" }}
+                style={{ width: "300px", transform: "scaleX(-1)" }}
               />
             )}
             <Box sx={{ position: "absolute", bottom: 0 }}>
