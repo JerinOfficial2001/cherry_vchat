@@ -118,7 +118,7 @@ const VideoCall = ({ roomID }) => {
     }
   };
   const router = useRouter();
-  const message = `Cherry Vchat Meeting Link: ${router.pathname}`;
+  const message = `Cherry Vchat Meeting Link: ${window.location.href}`;
 
   const handleClick = () => {
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
