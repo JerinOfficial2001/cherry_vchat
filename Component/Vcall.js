@@ -1,9 +1,13 @@
 import { Assignment, Phone } from "@mui/icons-material";
-import { Button, IconButton, TextField } from "@mui/material";
+import { Box, Button, IconButton, TextField } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import Peer from "simple-peer";
 import io from "socket.io-client";
+import MicIcon from "@mui/icons-material/Mic";
+import MicOffIcon from "@mui/icons-material/MicOff";
+import VideocamOffIcon from "@mui/icons-material/VideocamOff";
+import VideocamIcon from "@mui/icons-material/Videocam";
 
 const socket = io.connect("https://socket-server-fhra.onrender.com");
 
@@ -28,7 +32,9 @@ function Vcall() {
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         setStream(stream);
-        myVideo.current.srcObject = stream;
+        if (myVideo.current) {
+          myVideo.current.srcObject = stream;
+        }
       });
 
     socket.on("me", (id) => {
@@ -108,7 +114,7 @@ function Vcall() {
       <h1 style={{ textAlign: "center", color: "#fff" }}>Zoomish</h1>
       <div className="container">
         <div className="video-container">
-          <div className="video">
+          <div className="video" style={{ position: "relative" }}>
             {stream && (
               <video
                 playsInline
@@ -118,6 +124,22 @@ function Vcall() {
                 style={{ width: "300px" }}
               />
             )}
+            <Box sx={{ position: "absolute", bottom: 0 }}>
+              <IconButton
+                variant="contained"
+                color="primary"
+                onClick={toggleVideo}
+              >
+                {videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
+              </IconButton>
+              <IconButton
+                variant="contained"
+                color="primary"
+                onClick={toggleAudio}
+              >
+                {audioEnabled ? <MicIcon /> : <MicOffIcon />}
+              </IconButton>
+            </Box>
           </div>
           <div className="video">
             {callAccepted && !callEnded ? (
@@ -182,14 +204,6 @@ function Vcall() {
               </Button>
             </div>
           ) : null}
-        </div>
-        <div>
-          <Button variant="contained" color="primary" onClick={toggleVideo}>
-            {videoEnabled ? "Turn Off Video" : "Turn On Video"}
-          </Button>
-          <Button variant="contained" color="primary" onClick={toggleAudio}>
-            {audioEnabled ? "Turn Off Audio" : "Turn On Audio"}
-          </Button>
         </div>
       </div>
     </>
