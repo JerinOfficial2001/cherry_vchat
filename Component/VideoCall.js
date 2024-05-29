@@ -138,7 +138,7 @@ const VideoCall = ({ roomID }) => {
       }}
     >
       <Grid
-        sx={{ width: "100%", padding: 1, paddingBottom: 3 }}
+        sx={{ width: "100%", padding: 1, paddingBottom: 3, overflowY: "auto" }}
         container
         rowSpacing={1}
         columnSpacing={1}
