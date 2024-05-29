@@ -190,7 +190,7 @@ const VideoCall = ({ roomID }) => {
               lg={3}
               md={3}
               sm={6}
-              xs={12}
+              xs={4}
             >
               <Video peer={peer} />
             </Grid>
