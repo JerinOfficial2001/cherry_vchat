@@ -133,6 +133,8 @@ const VideoCall = ({ roomID }) => {
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
+        height: "100%",
+        position: "relative",
       }}
     >
       <Grid
@@ -141,15 +143,15 @@ const VideoCall = ({ roomID }) => {
         rowSpacing={1}
         columnSpacing={1}
       >
-        <Grid item lg={3} md={3} sm={6} xs={12}>
+        <Grid item lg={3} md={3} sm={6} xs={4}>
           <Box
             sx={{
-              width: { lg: "300px", md: "300px", sm: "100%", xs: "100%" },
+              width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
               height: {
                 lg: "300px",
                 md: "300px",
-                sm: peers.length > 0 ? "150px" : "100%",
-                xs: peers.length > 0 ? "150px" : "100%",
+                sm: "300px",
+                xs: peers.length > 0 ? "100px" : "100%",
               },
               borderRadius: "10px",
               background: "black",
@@ -170,15 +172,17 @@ const VideoCall = ({ roomID }) => {
             />
           </Box>
         </Grid>
+
         {peers.map((peer, index) => {
           return (
             <Grid
               sx={{
+                width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
                 height: {
                   lg: "300px",
                   md: "300px",
-                  sm: "150px",
-                  xs: "150px",
+                  sm: "300px",
+                  xs: "100px",
                 },
               }}
               key={index}
@@ -197,7 +201,7 @@ const VideoCall = ({ roomID }) => {
       <Box
         sx={{
           bottom: 0,
-          position: "sticky",
+          position: "fixed",
           background: "white",
           width: "100%",
           paddingY: 1,
@@ -253,12 +257,7 @@ const Video = ({ peer }) => {
   return (
     <Box
       sx={{
-        width: {
-          lg: "300px",
-          md: "300px",
-          sm: "100%",
-          xs: "100%",
-        },
+        width: "100%",
         height: "100%",
         borderRadius: "10px",
         background: "black",

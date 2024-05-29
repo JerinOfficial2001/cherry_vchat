@@ -1,3 +1,8 @@
+html,
+#__next {
+  height: 100%;
+}
+
 .container {
   display: grid;
   grid-template-columns: 7fr 3fr;
@@ -52,4 +57,5 @@ body {
   ); /* Chrome 10-25, Safari 5.1-6 */
   background: linear-gradient(to right, #8e54e9, #4776e6);
   margin: 0px;
+  height: 100%;
 }

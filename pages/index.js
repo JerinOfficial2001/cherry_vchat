@@ -29,7 +29,7 @@ export default function Home() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        height: "100vh",
+        height: "100%",
         gap: 2,
         flexDirection: {
           lg: "row",
