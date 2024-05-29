@@ -175,23 +175,7 @@ const VideoCall = ({ roomID }) => {
 
         {peers.map((peer, index) => {
           return (
-            <Grid
-              sx={{
-                width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
-                height: {
-                  lg: "300px",
-                  md: "300px",
-                  sm: "300px",
-                  xs: "100px",
-                },
-              }}
-              key={index}
-              item
-              lg={3}
-              md={3}
-              sm={6}
-              xs={4}
-            >
+            <Grid key={index} item lg={3} md={3} sm={6} xs={4}>
               <Video peer={peer} />
             </Grid>
           );
@@ -257,8 +241,13 @@ const Video = ({ peer }) => {
   return (
     <Box
       sx={{
-        width: "100%",
-        height: "100%",
+        width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
+        height: {
+          lg: "300px",
+          md: "300px",
+          sm: "300px",
+          xs: "100px",
+        },
         borderRadius: "10px",
         background: "black",
         paddingY: 1,
