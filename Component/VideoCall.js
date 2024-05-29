@@ -22,8 +22,6 @@ const VideoCall = ({ roomID }) => {
 
   const getVideoConstraints = () => ({
     video: {
-      width: { max: 640 },
-      height: { max: 480 },
       facingMode: usingRearCamera ? "environment" : "user",
     },
     audio: true,
