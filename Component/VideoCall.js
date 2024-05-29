@@ -1,5 +1,3 @@
-// components/VideoCall.js
-
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import Peer from "simple-peer";
@@ -10,59 +8,83 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import { Box, Button, Grid, IconButton } from "@mui/material";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useRouter } from "next/router";
-import { Assignment, Share } from "@mui/icons-material";
+import { Assignment, Share, SwitchCamera } from "@mui/icons-material";
 
 const VideoCall = ({ roomID }) => {
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
-
+  const [usingRearCamera, setUsingRearCamera] = useState(false);
   const [stream, setStream] = useState(null);
   const [peers, setPeers] = useState([]);
   const socketRef = useRef();
   const userVideoRef = useRef();
   const peersRef = useRef([]);
 
-  const videoConstraints = {
-    video: true,
+  const getVideoConstraints = () => ({
+    video: {
+      width: { max: 640 },
+      height: { max: 480 },
+      facingMode: usingRearCamera ? "environment" : "user",
+    },
     audio: true,
-  };
+  });
 
   useEffect(() => {
     socketRef.current = io.connect("https://socket-server-fhra.onrender.com");
-    navigator.mediaDevices.getUserMedia(videoConstraints).then((stream) => {
-      setStream(stream);
-      if (userVideoRef.current) {
-        userVideoRef.current.srcObject = stream;
-      }
-      socketRef.current.emit("join room", { roomID });
-      socketRef.current.on("all users", (users) => {
-        const peers = [];
-        users.forEach((userID) => {
-          const peer = createPeer(userID, socketRef.current.id, stream);
-          peersRef.current.push({
-            peerID: userID,
-            peer,
-          });
-          peers.push(peer);
-        });
-        setPeers(peers);
-      });
+    startMediaStream();
 
-      socketRef.current.on("user joined", (payload) => {
-        const peer = addPeer(payload.signal, payload.callerID, stream);
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      peersRef.current.forEach(({ peer }) => peer.destroy());
+    };
+  }, [roomID, usingRearCamera]);
+
+  const startMediaStream = async () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
+    const newStream = await navigator.mediaDevices.getUserMedia(
+      getVideoConstraints()
+    );
+    setStream(newStream);
+    if (userVideoRef.current) {
+      userVideoRef.current.srcObject = newStream;
+    }
+
+    socketRef.current.emit("join room", { roomID });
+    socketRef.current.on("all users", (users) => {
+      const peers = [];
+      users.forEach((userID) => {
+        const peer = createPeer(userID, socketRef.current.id, newStream);
         peersRef.current.push({
-          peerID: payload.callerID,
+          peerID: userID,
           peer,
         });
-        setPeers((users) => [...users, peer]);
+        peers.push(peer);
       });
-
-      socketRef.current.on("receiving returned signal", (payload) => {
-        const item = peersRef.current.find((p) => p.peerID === payload.id);
-        item.peer.signal(payload.signal);
-      });
+      setPeers(peers);
     });
-  }, [roomID]);
+
+    socketRef.current.on("user joined", (payload) => {
+      const peer = addPeer(payload.signal, payload.callerID, newStream);
+      peersRef.current.push({
+        peerID: payload.callerID,
+        peer,
+      });
+      setPeers((users) => [...users, peer]);
+    });
+
+    socketRef.current.on("receiving returned signal", (payload) => {
+      const item = peersRef.current.find((p) => p.peerID === payload.id);
+      item.peer.signal(payload.signal);
+    });
+  };
 
   const createPeer = (userToSignal, callerID, stream) => {
     const peer = new Peer({
@@ -117,6 +139,11 @@ const VideoCall = ({ roomID }) => {
       }
     }
   };
+
+  const switchCamera = () => {
+    setUsingRearCamera((prev) => !prev);
+  };
+
   const router = useRouter();
   const message = `Cherry Vchat Meeting Link: ${window.location.href}`;
 
@@ -126,6 +153,7 @@ const VideoCall = ({ roomID }) => {
     )}`;
     window.open(whatsappUrl, "_blank");
   };
+
   return (
     <Box
       sx={{
@@ -212,6 +240,9 @@ const VideoCall = ({ roomID }) => {
         </IconButton>
         <IconButton onClick={handleClick}>
           <Share />
+        </IconButton>
+        <IconButton onClick={switchCamera}>
+          <SwitchCamera />
         </IconButton>
         <CopyToClipboard text={router?.query?.id}>
           <Button
