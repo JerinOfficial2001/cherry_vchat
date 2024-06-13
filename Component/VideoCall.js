@@ -1,3 +1,5 @@
+// components/VideoCall.js
+
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import Peer from "simple-peer";
@@ -9,6 +11,7 @@ import { Box, Button, Grid, IconButton } from "@mui/material";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useRouter } from "next/router";
 import { Assignment, Share, SwitchCamera } from "@mui/icons-material";
+import Cookies from "js-cookie";
 
 const VideoCall = ({ roomID }) => {
   const [videoEnabled, setVideoEnabled] = useState(true);
@@ -19,6 +22,7 @@ const VideoCall = ({ roomID }) => {
   const socketRef = useRef();
   const userVideoRef = useRef();
   const peersRef = useRef([]);
+  const userID = Cookies.get("userID");
 
   const getVideoConstraints = () => ({
     video: {
@@ -29,6 +33,7 @@ const VideoCall = ({ roomID }) => {
 
   useEffect(() => {
     socketRef.current = io.connect("https://socket-server-fhra.onrender.com");
+    socketRef.current.emit("set_user_id", userID);
     startMediaStream();
 
     return () => {
@@ -41,6 +46,14 @@ const VideoCall = ({ roomID }) => {
       peersRef.current.forEach(({ peer }) => peer.destroy());
     };
   }, [roomID, usingRearCamera]);
+
+  useEffect(() => {
+    socketRef.current.emit("media updation", {
+      audio: audioEnabled,
+      video: videoEnabled,
+      id: userID,
+    });
+  }, [videoEnabled, audioEnabled]);
 
   const startMediaStream = async () => {
     if (stream) {
@@ -55,7 +68,7 @@ const VideoCall = ({ roomID }) => {
       userVideoRef.current.srcObject = newStream;
     }
 
-    socketRef.current.emit("join room", { roomID });
+    socketRef.current.emit("join room", { roomID, userID });
     socketRef.current.on("all users", (users) => {
       const peers = [];
       users.forEach((userID) => {
@@ -200,57 +213,87 @@ const VideoCall = ({ roomID }) => {
         </Grid>
 
         {peers.map((peer, index) => {
-          return (
-            <Grid key={index} item lg={3} md={3} sm={6} xs={4}>
-              <Video peer={peer} />
-            </Grid>
-          );
+          return <Video key={index} peer={peer} />;
         })}
       </Grid>
 
       <Box
         sx={{
-          bottom: 0,
-          position: "fixed",
-          background: "white",
           width: "100%",
-          paddingY: 1,
+          position: "absolute",
+          bottom: 5,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         <IconButton
-          sx={{ color: !videoEnabled ? "red" : "black" }}
-          variant="contained"
-          color="primary"
+          onClick={toggleAudio}
+          sx={{
+            color: "white",
+            border: "1px solid white",
+            marginRight: 1,
+            "&:hover": {
+              border: "1px solid green",
+            },
+          }}
+        >
+          {audioEnabled ? <MicIcon /> : <MicOffIcon />}
+        </IconButton>
+        <IconButton
           onClick={toggleVideo}
+          sx={{
+            color: "white",
+            border: "1px solid white",
+            marginRight: 1,
+            "&:hover": {
+              border: "1px solid green",
+            },
+          }}
         >
           {videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
         </IconButton>
         <IconButton
-          sx={{ color: !audioEnabled ? "red" : "black" }}
-          variant="contained"
-          color="primary"
-          onClick={toggleAudio}
+          onClick={switchCamera}
+          sx={{
+            color: "white",
+            border: "1px solid white",
+            marginRight: 1,
+            "&:hover": {
+              border: "1px solid green",
+            },
+          }}
         >
-          {audioEnabled ? <MicIcon /> : <MicOffIcon />}
-        </IconButton>
-        <IconButton onClick={handleClick}>
-          <Share />
-        </IconButton>
-        <IconButton onClick={switchCamera}>
           <SwitchCamera />
         </IconButton>
-        <CopyToClipboard text={router?.query?.id}>
+        <CopyToClipboard text={window.location.href}>
           <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<Assignment fontSize="large" />}
+            sx={{
+              color: "white",
+              border: "1px solid white",
+              "&:hover": {
+                border: "1px solid green",
+              },
+            }}
+            startIcon={<Assignment />}
           >
-            Copy ID
+            Copy Invite Link
           </Button>
         </CopyToClipboard>
+        <Button
+          sx={{
+            color: "white",
+            border: "1px solid white",
+            marginLeft: 1,
+            "&:hover": {
+              border: "1px solid green",
+            },
+          }}
+          startIcon={<Share />}
+          onClick={handleClick}
+        >
+          Share
+        </Button>
       </Box>
     </Box>
   );
@@ -261,34 +304,33 @@ const Video = ({ peer }) => {
 
   useEffect(() => {
     peer.on("stream", (stream) => {
-      if (ref.current) {
-        ref.current.srcObject = stream;
-      }
+      ref.current.srcObject = stream;
     });
   }, [peer]);
 
   return (
-    <Box
-      sx={{
-        width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
-        height: {
-          lg: "300px",
-          md: "300px",
-          sm: "300px",
-          xs: "100px",
-        },
-        borderRadius: "10px",
-        background: "black",
-        paddingY: 1,
-      }}
-    >
-      <video
-        ref={ref}
-        autoPlay
-        playsInline
-        style={{ width: "100%", height: "100%", borderRadius: "10px" }}
-      />
-    </Box>
+    <Grid item lg={3} md={3} sm={6} xs={4}>
+      <Box
+        sx={{
+          width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
+          height: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
+          borderRadius: "10px",
+          background: "black",
+        }}
+      >
+        <video
+          playsInline
+          autoPlay
+          ref={ref}
+          style={{
+            transform: "scaleX(-1)",
+            width: "100%",
+            borderRadius: "10px",
+            height: "100%",
+          }}
+        />
+      </Box>
+    </Grid>
   );
 };
 
