@@ -1,4 +1,4 @@
-import { Assignment, Phone } from "@mui/icons-material";
+import { Assignment, CallEnd, ContentCopy, Phone } from "@mui/icons-material";
 import { Box, Button, IconButton, TextField } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
@@ -23,6 +23,7 @@ function Vcall() {
   const [name, setName] = useState("");
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [fullScreen, setfullScreen] = useState(false);
   const myVideo = useRef();
   const userVideo = useRef();
   const connectionRef = useRef();
@@ -47,7 +48,7 @@ function Vcall() {
       setName(data.name);
       setCallerSignal(data.signal);
     });
-  }, []);
+  }, [socket]);
 
   const callUser = (id) => {
     const peer = new Peer({
@@ -93,6 +94,8 @@ function Vcall() {
   };
 
   const leaveCall = () => {
+    setReceivingCall(false);
+    setCallAccepted(false);
     setCallEnded(true);
     connectionRef.current.destroy();
   };
@@ -108,51 +111,84 @@ function Vcall() {
     audioTrack.enabled = !audioTrack.enabled;
     setAudioEnabled(audioTrack.enabled);
   };
-
+  const handleFullScreen = () => {
+    setfullScreen(!fullScreen);
+  };
   return (
-    <>
-      <h1 style={{ textAlign: "center", color: "#fff" }}>Zoomish</h1>
-      <div className="container">
-        <div className="video-container">
-          <div className="video" style={{ position: "relative" }}>
-            {stream && (
-              <video
-                playsInline
-                muted
-                ref={myVideo}
-                autoPlay
-                style={{ width: "300px", transform: "scaleX(-1)" }}
-              />
-            )}
-            <Box sx={{ position: "absolute", bottom: 0 }}>
-              <IconButton
-                variant="contained"
-                color="primary"
-                onClick={toggleVideo}
-              >
-                {videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
-              </IconButton>
-              <IconButton
-                variant="contained"
-                color="primary"
-                onClick={toggleAudio}
-              >
-                {audioEnabled ? <MicIcon /> : <MicOffIcon />}
-              </IconButton>
-            </Box>
-          </div>
-          <div className="video">
-            {callAccepted && !callEnded ? (
-              <video
-                playsInline
-                ref={userVideo}
-                autoPlay
-                style={{ width: "300px" }}
-              />
-            ) : null}
-          </div>
-        </div>
-        <div className="myId">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "space-around",
+        width: "100%",
+        height: "100vh",
+      }}
+    >
+      <h1 style={{ textAlign: "center", color: "#fff" }}>Cherry Vchat</h1>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+        }}
+      >
+        {stream && (
+          <Box
+            onClick={handleFullScreen}
+            sx={{
+              width: {
+                lg: "300px",
+                xs: fullScreen ? "300px" : "100px",
+              },
+            }}
+          >
+            <video
+              playsInline
+              muted
+              ref={myVideo}
+              autoPlay
+              style={{
+                width: "100%",
+                transform: "scaleX(-1)",
+                borderRadius: "10px",
+              }}
+            />
+          </Box>
+        )}
+
+        {callAccepted && !callEnded ? (
+          <Box
+            onClick={handleFullScreen}
+            sx={{
+              width: {
+                lg: "300px",
+                xs: !fullScreen ? "300px" : "100px",
+              },
+            }}
+          >
+            <video
+              playsInline
+              ref={userVideo}
+              autoPlay
+              style={{ width: "100%", borderRadius: "10px" }}
+            />
+          </Box>
+        ) : null}
+      </Box>
+      {!callAccepted && !receivingCall && (
+        <Box
+          sx={{
+            background: "white",
+            flexDirection: "column",
+            display: "flex",
+            padding: 5,
+            borderRadius: 10,
+          }}
+        >
           <TextField
             id="filled-basic"
             label="Name"
@@ -170,7 +206,6 @@ function Vcall() {
               Copy ID
             </Button>
           </CopyToClipboard>
-
           <TextField
             id="filled-basic"
             label="ID to call"
@@ -194,19 +229,50 @@ function Vcall() {
             )}
             {idToCall}
           </div>
-        </div>
-        <div>
-          {receivingCall && !callAccepted ? (
-            <div className="caller">
-              <h1>{name} is calling...</h1>
-              <Button variant="contained" color="primary" onClick={answerCall}>
-                Answer
-              </Button>
-            </div>
-          ) : null}
-        </div>
+        </Box>
+      )}
+      <div>
+        {receivingCall && !callAccepted ? (
+          <div className="caller">
+            <h1>{name} is calling...</h1>
+            <Button variant="contained" color="primary" onClick={answerCall}>
+              Answer
+            </Button>
+          </div>
+        ) : null}
       </div>
-    </>
+      {callAccepted && (
+        <Box
+          sx={{
+            width: { lg: "80%", md: "80%", sm: "98%", xs: "98%" },
+            background: "black",
+            borderRadius: "20px",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "sticky",
+            bottom: 0,
+            gap: 3,
+          }}
+        >
+          <IconButton variant="contained" color="primary" onClick={toggleVideo}>
+            {videoEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
+          </IconButton>
+          <IconButton variant="contained" color="primary" onClick={toggleAudio}>
+            {audioEnabled ? <MicIcon /> : <MicOffIcon />}
+          </IconButton>
+          <IconButton>
+            <CopyToClipboard text={me}>
+              <ContentCopy fontSize="small" sx={{ color: "white" }} />
+            </CopyToClipboard>
+          </IconButton>
+          <IconButton variant="contained" color="primary" onClick={leaveCall}>
+            <CallEnd sx={{ color: "red" }} />
+          </IconButton>
+        </Box>
+      )}
+    </Box>
   );
 }
 

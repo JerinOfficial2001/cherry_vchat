@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { Box, Button, TextField } from "@mui/material";
+import { Call } from "@mui/icons-material";
 
 export default function Home() {
   const [meetingID, setMeetingID] = useState("");
@@ -70,6 +71,23 @@ export default function Home() {
         onClick={handleJoinMeeting}
       >
         Join Meeting
+      </Button>
+      <Button
+        variant="contained"
+        startIcon={<Call sx={{ color: "white" }} />}
+        sx={{
+          color: "white",
+          border: "1px solid white",
+          "&:hover": {
+            border: "1px solid green",
+          },
+          background: "green",
+        }}
+        onClick={() => {
+          router.push("/solovchat");
+        }}
+      >
+        Call
       </Button>
     </Box>
   );
