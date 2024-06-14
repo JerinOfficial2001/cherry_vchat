@@ -3,7 +3,7 @@
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 
-const VideoCall = dynamic(() => import("../../Component/VideoCall"), {
+const VideoCall = dynamic(() => import("../../components/VideoCall"), {
   ssr: false,
 });
 

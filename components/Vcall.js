@@ -14,8 +14,11 @@ import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import { useRouter } from "next/router";
 
 function Vcall() {
+  const router = useRouter();
+
   const [me, setMe] = useState("");
   const [usingRearCamera, setUsingRearCamera] = useState(false);
   const [stream, setStream] = useState();
@@ -32,9 +35,10 @@ function Vcall() {
   const myVideo = useRef();
   const userVideo = useRef();
   const connectionRef = useRef();
-
-  const socket = io("https://socket-server-fhra.onrender.com", {
+  const [Mypeer, setMypeer] = useState(null);
+  const socket = io("http://localhost:4000", {
     path: "/vchat",
+    query: { userid: router.query.userid },
   });
   useEffect(() => {
     navigator.mediaDevices
@@ -50,11 +54,14 @@ function Vcall() {
           myVideo.current.srcObject = stream;
         }
       });
+  }, []);
+
+  useEffect(() => {
     const handleSocketEvents = () => {
       // Emit "me" event when connected to get socket id
-      socket.on("connect", () => {
-        socket.emit("me", socket.id);
-      });
+      // socket.on("connect", () => {
+      //   socket.emit("me", socket.id);
+      // });
 
       // Event listener for "me" event
       socket.on("me", (id) => {
@@ -70,11 +77,11 @@ function Vcall() {
         setName(data.name);
         setCallerSignal(data.signal);
       });
-
+      socket.on("callAccepted", (signal) => {
+        setCallAccepted(true);
+        Mypeer.signal(signal);
+      });
       // Disconnect socket when component unmounts
-      return () => {
-        socket.disconnect();
-      };
     };
 
     if (socket.connected) {
@@ -103,10 +110,7 @@ function Vcall() {
     peer.on("stream", (stream) => {
       userVideo.current.srcObject = stream;
     });
-    socket.on("callAccepted", (signal) => {
-      setCallAccepted(true);
-      peer.signal(signal);
-    });
+    setMypeer(peer);
 
     connectionRef.current = peer;
   };
