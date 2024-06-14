@@ -1,4 +1,10 @@
-import { Assignment, CallEnd, ContentCopy, Phone } from "@mui/icons-material";
+import {
+  Assignment,
+  CallEnd,
+  ContentCopy,
+  Phone,
+  SwitchCamera,
+} from "@mui/icons-material";
 import { Box, Button, IconButton, TextField } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
@@ -9,10 +15,9 @@ import MicOffIcon from "@mui/icons-material/MicOff";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import VideocamIcon from "@mui/icons-material/Videocam";
 
-const socket = io.connect("https://socket-server-fhra.onrender.com");
-
 function Vcall() {
   const [me, setMe] = useState("");
+  const [usingRearCamera, setUsingRearCamera] = useState(false);
   const [stream, setStream] = useState();
   const [receivingCall, setReceivingCall] = useState(false);
   const [caller, setCaller] = useState("");
@@ -28,27 +33,58 @@ function Vcall() {
   const userVideo = useRef();
   const connectionRef = useRef();
 
+  const socket = io("https://socket-server-fhra.onrender.com", {
+    path: "/vchat",
+  });
   useEffect(() => {
     navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
+      .getUserMedia({
+        video: {
+          facingMode: usingRearCamera ? "environment" : "user",
+        },
+        audio: true,
+      })
       .then((stream) => {
         setStream(stream);
         if (myVideo.current) {
           myVideo.current.srcObject = stream;
         }
       });
+    const handleSocketEvents = () => {
+      // Emit "me" event when connected to get socket id
+      socket.on("connect", () => {
+        socket.emit("me", socket.id);
+      });
 
-    socket.on("me", (id) => {
-      setMe(id);
-    });
+      // Event listener for "me" event
+      socket.on("me", (id) => {
+        console.log("Received 'me' event with ID:", id);
+        setMe(id);
+      });
 
-    socket.on("callUser", (data) => {
-      setReceivingCall(true);
-      setCaller(data.from);
-      setName(data.name);
-      setCallerSignal(data.signal);
-    });
-  }, [socket]);
+      // Event listener for "callUser" event
+      socket.on("callUser", (data) => {
+        console.log("Received 'callUser' event:", data);
+        setReceivingCall(true);
+        setCaller(data.from);
+        setName(data.name);
+        setCallerSignal(data.signal);
+      });
+
+      // Disconnect socket when component unmounts
+      return () => {
+        socket.disconnect();
+      };
+    };
+
+    if (socket.connected) {
+      handleSocketEvents();
+    } else {
+      socket.on("connect", () => {
+        handleSocketEvents();
+      });
+    }
+  }, []);
 
   const callUser = (id) => {
     const peer = new Peer({
@@ -114,6 +150,10 @@ function Vcall() {
   const handleFullScreen = () => {
     setfullScreen(!fullScreen);
   };
+  const switchCamera = () => {
+    setUsingRearCamera((prev) => !prev);
+  };
+
   return (
     <Box
       sx={{
@@ -197,6 +237,17 @@ function Vcall() {
             onChange={(e) => setName(e.target.value)}
             style={{ marginBottom: "20px" }}
           />
+          <Box
+            sx={{
+              color: me ? "slategray" : "red",
+              padding: 1,
+              borderRadius: "10px",
+              background: "#00000029",
+              marginBottom: "10px",
+            }}
+          >
+            {me ? me : "Socket server not connected"}
+          </Box>
           <CopyToClipboard text={me} style={{ marginBottom: "2rem" }}>
             <Button
               variant="contained"
@@ -227,7 +278,6 @@ function Vcall() {
                 <Phone fontSize="large" />
               </IconButton>
             )}
-            {idToCall}
           </div>
         </Box>
       )}
@@ -261,6 +311,9 @@ function Vcall() {
           </IconButton>
           <IconButton variant="contained" color="primary" onClick={toggleAudio}>
             {audioEnabled ? <MicIcon /> : <MicOffIcon />}
+          </IconButton>
+          <IconButton onClick={switchCamera}>
+            <SwitchCamera sx={{ color: "white" }} />
           </IconButton>
           <IconButton>
             <CopyToClipboard text={me}>
