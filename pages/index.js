@@ -18,7 +18,7 @@ export default function Home() {
   const Authentication = async (formData) => {
     try {
       const { data } = await axios.post(
-        "http://localhost:4000/vChat/auth",
+        process.env.NEXT_PUBLIC_SOCKET_URL + "/vChat/auth",
         formData
       );
       if (data.status == "ok") {

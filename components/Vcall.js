@@ -36,7 +36,7 @@ function Vcall() {
   const userVideo = useRef();
   const connectionRef = useRef();
   const [Mypeer, setMypeer] = useState(null);
-  const socket = io("http://localhost:4000", {
+  const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
     path: "/vchat",
     query: { userid: router.query.userid },
   });
