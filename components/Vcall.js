@@ -36,7 +36,6 @@ function Vcall() {
   const myVideo = useRef();
   const userVideo = useRef();
   const connectionRef = useRef();
-<<<<<<< HEAD
   const socketRef = useRef();
 
   useEffect(() => {
@@ -69,13 +68,6 @@ function Vcall() {
     };
   }, []);
 
-=======
-  const [Mypeer, setMypeer] = useState(null);
-  const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-    path: "/vchat",
-    query: { userid: router.query.userid },
-  });
->>>>>>> 7508dd8d2f0906b24e94ddcfcc73da1b8869af0c
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({
