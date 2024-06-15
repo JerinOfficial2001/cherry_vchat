@@ -5,7 +5,7 @@ import {
   Phone,
   SwitchCamera,
 } from "@mui/icons-material";
-import { Box, Button, IconButton, TextField } from "@mui/material";
+import { Box, Button, IconButton, Stack, TextField } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import Peer from "simple-peer";
@@ -15,6 +15,7 @@ import MicOffIcon from "@mui/icons-material/MicOff";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import { useRouter } from "next/router";
+import PersonSharpIcon from "@mui/icons-material/PersonSharp";
 
 function Vcall() {
   const router = useRouter();
@@ -31,15 +32,50 @@ function Vcall() {
   const [name, setName] = useState("");
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [fullScreen, setfullScreen] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
   const myVideo = useRef();
   const userVideo = useRef();
   const connectionRef = useRef();
+<<<<<<< HEAD
+  const socketRef = useRef();
+
+  useEffect(() => {
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+      path: "/vchat",
+    });
+
+    socketRef.current.on("me", (id) => {
+      setMe(id);
+    });
+
+    socketRef.current.on("callUser", (data) => {
+      setReceivingCall(true);
+      setCaller(data.from);
+      setName(data.name);
+      setCallerSignal(data.signal);
+    });
+
+    socketRef.current.on("callAccepted", (signal) => {
+      setCallAccepted(true);
+      connectionRef.current.signal(signal);
+    });
+    socketRef.current.on("callEnded", (data) => {
+      setReceivingCall(false);
+      setCallAccepted(false);
+      setCallEnded(true);
+    });
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, []);
+
+=======
   const [Mypeer, setMypeer] = useState(null);
   const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
     path: "/vchat",
     query: { userid: router.query.userid },
   });
+>>>>>>> 7508dd8d2f0906b24e94ddcfcc73da1b8869af0c
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({
@@ -54,44 +90,13 @@ function Vcall() {
           myVideo.current.srcObject = stream;
         }
       });
-  }, []);
+  }, [usingRearCamera]);
 
   useEffect(() => {
-    const handleSocketEvents = () => {
-      // Emit "me" event when connected to get socket id
-      // socket.on("connect", () => {
-      //   socket.emit("me", socket.id);
-      // });
-
-      // Event listener for "me" event
-      socket.on("me", (id) => {
-        console.log("Received 'me' event with ID:", id);
-        setMe(id);
-      });
-
-      // Event listener for "callUser" event
-      socket.on("callUser", (data) => {
-        console.log("Received 'callUser' event:", data);
-        setReceivingCall(true);
-        setCaller(data.from);
-        setName(data.name);
-        setCallerSignal(data.signal);
-      });
-      socket.on("callAccepted", (signal) => {
-        setCallAccepted(true);
-        Mypeer.signal(signal);
-      });
-      // Disconnect socket when component unmounts
-    };
-
-    if (socket.connected) {
-      handleSocketEvents();
-    } else {
-      socket.on("connect", () => {
-        handleSocketEvents();
-      });
+    if (router.query.userid) {
+      socketRef.current.emit("me", router.query.userid);
     }
-  }, []);
+  }, [router.query.userid]);
 
   const callUser = (id) => {
     const peer = new Peer({
@@ -99,18 +104,21 @@ function Vcall() {
       trickle: false,
       stream: stream,
     });
+
     peer.on("signal", (data) => {
-      socket.emit("callUser", {
+      socketRef.current.emit("callUser", {
         userToCall: id,
         signalData: data,
         from: me,
         name: name,
       });
     });
+
     peer.on("stream", (stream) => {
-      userVideo.current.srcObject = stream;
+      if (userVideo.current) {
+        userVideo.current.srcObject = stream;
+      }
     });
-    setMypeer(peer);
 
     connectionRef.current = peer;
   };
@@ -123,10 +131,13 @@ function Vcall() {
       stream: stream,
     });
     peer.on("signal", (data) => {
-      socket.emit("answerCall", { signal: data, to: caller });
+      socketRef.current.emit("answerCall", { signal: data, to: caller });
     });
+
     peer.on("stream", (stream) => {
-      userVideo.current.srcObject = stream;
+      if (userVideo.current) {
+        userVideo.current.srcObject = stream;
+      }
     });
 
     peer.signal(callerSignal);
@@ -138,6 +149,10 @@ function Vcall() {
     setCallAccepted(false);
     setCallEnded(true);
     connectionRef.current.destroy();
+    if (!callEnded) {
+      socketRef.current.emit("callEnded", true);
+    }
+    // window.location.reload(); // reload the page to reset the state
   };
 
   const toggleVideo = () => {
@@ -151,9 +166,11 @@ function Vcall() {
     audioTrack.enabled = !audioTrack.enabled;
     setAudioEnabled(audioTrack.enabled);
   };
+
   const handleFullScreen = () => {
-    setfullScreen(!fullScreen);
+    setFullScreen(!fullScreen);
   };
+
   const switchCamera = () => {
     setUsingRearCamera((prev) => !prev);
   };
@@ -162,14 +179,66 @@ function Vcall() {
     <Box
       sx={{
         display: "flex",
-        flexDirection: "column",
+        flexDirection: {
+          xl: "row",
+          lg: "row",
+          md: "row",
+          sm: "column",
+          xs: "column",
+        },
         alignItems: "center",
-        justifyContent: "space-around",
+        justifyContent: {
+          xl: "center",
+          lg: "center",
+          md: "center",
+          sm: "space-around",
+          xs: "space-around",
+        },
         width: "100%",
         height: "100vh",
+        gap: 3,
       }}
     >
-      <h1 style={{ textAlign: "center", color: "#fff" }}>Cherry Vchat</h1>
+      {!callAccepted && (
+        <Stack
+          sx={{
+            position: "fixed",
+            right: 30,
+            background: "#0000009c",
+            gap: 5,
+            borderRadius: 20,
+            boxShadow: "0 0 1px 1px black",
+            zIndex: 1,
+          }}
+        >
+          <IconButton variant="contained" color="primary" onClick={toggleVideo}>
+            {videoEnabled ? (
+              <VideocamIcon sx={{ color: "white" }} />
+            ) : (
+              <VideocamOffIcon sx={{ color: "white" }} />
+            )}
+          </IconButton>
+          <IconButton variant="contained" color="primary" onClick={toggleAudio}>
+            {audioEnabled ? (
+              <MicIcon sx={{ color: "white" }} />
+            ) : (
+              <MicOffIcon sx={{ color: "white" }} />
+            )}
+          </IconButton>
+        </Stack>
+      )}
+      <h1
+        style={{
+          textAlign: "center",
+          color: "#fff",
+          position: "fixed",
+          top: 10,
+          fontSize: "large",
+          fontWeight: "bold",
+        }}
+      >
+        Cherry Vchat
+      </h1>
 
       <Box
         sx={{
@@ -177,7 +246,6 @@ function Vcall() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          width: "100%",
         }}
       >
         {stream && (
@@ -188,8 +256,23 @@ function Vcall() {
                 lg: "300px",
                 xs: fullScreen ? "300px" : "100px",
               },
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
+            {!videoEnabled && (
+              <PersonSharpIcon
+                sx={{
+                  height: fullScreen ? 200 : 80,
+                  width: fullScreen ? 200 : 80,
+                  position: "absolute",
+                  zIndex: 1,
+                  color: "gray",
+                }}
+              />
+            )}
             <video
               playsInline
               muted

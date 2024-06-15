@@ -1,21 +1,17 @@
 // pages/meeting/[id].js
 
+import VideoCall from "@/components/VideoCall";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
-
-const VideoCall = dynamic(() => import("../../components/VideoCall"), {
-  ssr: false,
-});
 
 const Meeting = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, user_id } = router.query;
 
-  if (!id) {
+  if (!id || !user_id) {
     return <div>Loading...</div>;
   }
 
-  return <VideoCall roomID={id} />;
+  return <VideoCall roomID={id} user_id={user_id} />;
 };
 
 export default Meeting;

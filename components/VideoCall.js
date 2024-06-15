@@ -10,7 +10,7 @@ import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useRouter } from "next/router";
 import { Assignment, Share, SwitchCamera } from "@mui/icons-material";
 
-const VideoCall = ({ roomID }) => {
+const VideoCall = ({ roomID, user_id }) => {
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [usingRearCamera, setUsingRearCamera] = useState(false);
@@ -18,6 +18,7 @@ const VideoCall = ({ roomID }) => {
   const [peers, setPeers] = useState([]);
   const socketRef = useRef();
   const userVideoRef = useRef();
+  const myVideoRef = useRef();
   const peersRef = useRef([]);
 
   const getVideoConstraints = () => ({
@@ -28,7 +29,10 @@ const VideoCall = ({ roomID }) => {
   });
 
   useEffect(() => {
-    socketRef.current = io.connect("https://socket-server-fhra.onrender.com");
+    socketRef.current = io.connect(process.env.NEXT_PUBLIC_SOCKET_URL, {
+      query: { userID: user_id },
+      path: "/groupvchat",
+    });
     startMediaStream();
 
     return () => {
@@ -40,12 +44,27 @@ const VideoCall = ({ roomID }) => {
       }
       peersRef.current.forEach(({ peer }) => peer.destroy());
     };
-  }, [roomID, usingRearCamera]);
+  }, []);
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({
+        video: {
+          facingMode: usingRearCamera ? "environment" : "user",
+        },
+        audio: true,
+      })
+      .then((VDOstream) => {
+        setStream(VDOstream);
+        if (myVideoRef.current) {
+          myVideoRef.current.srcObject = VDOstream;
+        }
+      });
+  }, [usingRearCamera]);
   useEffect(() => {
     socketRef.current.emit("media updation", {
       audio: audioEnabled,
       video: videoEnabled,
-      id: "",
+      id: user_id,
     });
   }, [videoEnabled, audioEnabled]);
 
@@ -62,11 +81,11 @@ const VideoCall = ({ roomID }) => {
       userVideoRef.current.srcObject = newStream;
     }
 
-    socketRef.current.emit("join room", { roomID });
+    socketRef.current.emit("join room", { roomID, userID: user_id });
     socketRef.current.on("all users", (users) => {
       const peers = [];
       users.forEach((userID) => {
-        const peer = createPeer(userID, socketRef.current.id, newStream);
+        const peer = createPeer(userID, user_id, newStream);
         peersRef.current.push({
           peerID: userID,
           peer,
@@ -117,7 +136,11 @@ const VideoCall = ({ roomID }) => {
     });
 
     peer.on("signal", (signal) => {
-      socketRef.current.emit("returning signal", { signal, callerID });
+      socketRef.current.emit("returning signal", {
+        signal,
+        callerID,
+        userID: user_id,
+      });
     });
 
     peer.signal(incomingSignal);

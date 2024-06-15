@@ -14,7 +14,7 @@ import {
   MicOffIcon,
 } from "@mui/icons-material";
 
-const socket = io.connect("https://socket-server-fhra.onrender.com");
+const socket = io.connect(process.env.NEXT_PUBLIC_SOCKET_URL);
 
 function GroupVcall() {
   const [me, setMe] = useState("");

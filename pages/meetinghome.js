@@ -11,15 +11,15 @@ export default function Meetinghome() {
 
   const handleCreateMeeting = async () => {
     const response = await fetch(
-      "https://socket-server-fhra.onrender.com/create-room"
+      process.env.NEXT_PUBLIC_SOCKET_URL + "/create-room"
     );
     const data = await response.json();
-    router.push(`/meeting/${data.roomID}`);
+    router.push(`/meeting/${data.roomID}?user_id=${router.query.userID}`);
   };
 
   const handleJoinMeeting = () => {
     if (meetingID) {
-      router.push(`/meeting/${meetingID}`);
+      router.push(`/meeting/${meetingID}?user_id=${router.query.userID}`);
     }
   };
 
