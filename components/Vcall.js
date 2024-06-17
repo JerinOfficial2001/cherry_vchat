@@ -72,14 +72,13 @@ function Vcall() {
     navigator.mediaDevices
       .getUserMedia({
         video: {
-          facingMode: usingRearCamera ? "environment" : "user",
+          facingMode: !usingRearCamera ? "environment" : "user",
         },
         audio: true,
       })
       .then((vdo) => {
         setStream(vdo);
         if (myVideo.current) {
-          console.log(vdo, "rear");
           myVideo.current.srcObject = vdo;
         }
       });
@@ -241,7 +240,6 @@ function Vcall() {
           justifyContent: "center",
         }}
       >
-        {console.log(myVideo, "myVideo")}
         {myVideo && (
           <Box
             onClick={handleFullScreen}
