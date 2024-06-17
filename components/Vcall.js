@@ -16,6 +16,7 @@ import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import { useRouter } from "next/router";
 import PersonSharpIcon from "@mui/icons-material/PersonSharp";
+import FlipCameraIosIcon from "@mui/icons-material/FlipCameraIos";
 
 function Vcall() {
   const router = useRouter();
@@ -58,38 +59,49 @@ function Vcall() {
       setCallAccepted(true);
       connectionRef.current.signal(signal);
     });
+
     socketRef.current.on("callEnded", (data) => {
       setReceivingCall(false);
       setCallAccepted(false);
       setCallEnded(true);
     });
+
     return () => {
       socketRef.current.disconnect();
     };
   }, []);
 
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          facingMode: usingRearCamera ? "environment" : "user",
-        },
-        audio: true,
-      })
-      .then((vdo) => {
-        setStream(vdo);
-        console.log("vdo", vdo);
-        if (myVideo.current) {
-          myVideo.current.srcObject = vdo;
-        }
-      });
+    getUserMedia();
   }, [usingRearCamera]);
-  console.log(myVideo, "myvdo");
+
   useEffect(() => {
     if (router.query.userid) {
       socketRef.current.emit("me", router.query.userid);
     }
   }, [router.query.userid]);
+
+  const getUserMedia = () => {
+    const constraints = {
+      video: {
+        facingMode: usingRearCamera ? "environment" : "user",
+      },
+      audio: true,
+    };
+    navigator.mediaDevices.getUserMedia(constraints).then((vdo) => {
+      setStream(vdo);
+      if (myVideo.current) {
+        myVideo.current.srcObject = vdo;
+      }
+      if (connectionRef.current) {
+        const videoTrack = vdo.getVideoTracks()[0];
+        const sender = connectionRef.current.peer
+          .getSenders()
+          .find((s) => s.track.kind === "video");
+        sender.replaceTrack(videoTrack);
+      }
+    });
+  };
 
   const callUser = (id) => {
     const peer = new Peer({
@@ -165,6 +177,8 @@ function Vcall() {
   };
 
   const switchCamera = () => {
+    const videoTrack = stream.getVideoTracks()[0];
+    videoTrack.stop();
     setUsingRearCamera((prev) => !prev);
   };
 
@@ -218,13 +232,18 @@ function Vcall() {
               <MicOffIcon sx={{ color: "white" }} />
             )}
           </IconButton>
+          <IconButton onClick={switchCamera}>
+            <FlipCameraIosIcon
+              sx={{ color: usingRearCamera ? "green" : "white" }}
+            />
+          </IconButton>
         </Stack>
       )}
       <h1
         style={{
           textAlign: "center",
           color: "#fff",
-          position: "fixed",
+          position: { lg: "fixed", sm: "relative" },
           top: 10,
           fontSize: "large",
           fontWeight: "bold",
@@ -393,7 +412,9 @@ function Vcall() {
             {audioEnabled ? <MicIcon /> : <MicOffIcon />}
           </IconButton>
           <IconButton onClick={switchCamera}>
-            <SwitchCamera sx={{ color: "white" }} />
+            <FlipCameraIosIcon
+              sx={{ color: usingRearCamera ? "green" : "white" }}
+            />
           </IconButton>
           <IconButton>
             <CopyToClipboard text={me}>
