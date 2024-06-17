@@ -79,6 +79,7 @@ function Vcall() {
       .then((vdo) => {
         setStream(vdo);
         if (myVideo.current) {
+          console.log(vdo, "rear");
           myVideo.current.srcObject = vdo;
         }
       });
@@ -240,6 +241,7 @@ function Vcall() {
           justifyContent: "center",
         }}
       >
+        {console.log(myVideo, "myVideo")}
         {myVideo && (
           <Box
             onClick={handleFullScreen}
