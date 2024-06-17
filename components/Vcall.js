@@ -43,7 +43,9 @@ function Vcall() {
     socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
       path: "/vchat",
     });
-
+    socketRef.current.on("connect", () => {
+      console.log("Socket connected:", socketRef.current.id);
+    });
     socketRef.current.on("me", (id) => {
       setMe(id);
     });
@@ -177,11 +179,34 @@ function Vcall() {
   };
 
   const switchCamera = () => {
+    // Stop the current video track
     const videoTrack = stream.getVideoTracks()[0];
     videoTrack.stop();
-    setUsingRearCamera((prev) => !prev);
-  };
 
+    // Toggle the camera (rear or front)
+    setUsingRearCamera((prev) => !prev);
+
+    // Get the updated stream with the new camera configuration
+    const constraints = {
+      video: {
+        facingMode: !usingRearCamera ? "environment" : "user",
+      },
+      audio: true,
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints).then((vdo) => {
+      // Update the local stream
+      setStream(vdo);
+
+      // Update the peer connection with the new stream
+      if (connectionRef.current) {
+        const sender = connectionRef.current.peer
+          .getSenders()
+          .find((s) => s.track.kind === "video");
+        sender.replaceTrack(vdo.getVideoTracks()[0]);
+      }
+    });
+  };
   return (
     <Box
       sx={{
