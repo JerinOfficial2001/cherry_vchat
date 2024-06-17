@@ -76,10 +76,10 @@ function Vcall() {
         },
         audio: true,
       })
-      .then((stream) => {
-        setStream(stream);
+      .then((vdo) => {
+        setStream(vdo);
         if (myVideo.current) {
-          myVideo.current.srcObject = stream;
+          myVideo.current.srcObject = vdo;
         }
       });
   }, [usingRearCamera]);
@@ -240,7 +240,7 @@ function Vcall() {
           justifyContent: "center",
         }}
       >
-        {stream && (
+        {myVideo && (
           <Box
             onClick={handleFullScreen}
             sx={{
