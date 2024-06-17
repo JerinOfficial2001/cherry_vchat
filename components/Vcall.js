@@ -72,18 +72,19 @@ function Vcall() {
     navigator.mediaDevices
       .getUserMedia({
         video: {
-          facingMode: !usingRearCamera ? "environment" : "user",
+          facingMode: usingRearCamera ? "environment" : "user",
         },
         audio: true,
       })
       .then((vdo) => {
         setStream(vdo);
+        console.log("vdo", vdo);
         if (myVideo.current) {
           myVideo.current.srcObject = vdo;
         }
       });
   }, [usingRearCamera]);
-
+  console.log(myVideo, "myvdo");
   useEffect(() => {
     if (router.query.userid) {
       socketRef.current.emit("me", router.query.userid);
