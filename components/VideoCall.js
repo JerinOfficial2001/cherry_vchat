@@ -19,7 +19,6 @@ const VideoCall = ({ roomID, user_id }) => {
   const socketRef = useRef();
   const userVideoRef = useRef();
   const peersRef = useRef([]);
-  console.log({ peers, userVideoRef });
   const getVideoConstraints = () => ({
     video: {
       facingMode: usingRearCamera ? "environment" : "user",
@@ -238,8 +237,8 @@ const VideoCall = ({ roomID, user_id }) => {
             }}
           >
             <video
-              muted
               ref={userVideoRef}
+              muted
               autoPlay
               playsInline
               style={{
@@ -319,7 +318,7 @@ const Video = ({ peer }) => {
       }
     });
   }, [peer]);
-
+  console.log(ref, "ref");
   return (
     <Box
       sx={{
