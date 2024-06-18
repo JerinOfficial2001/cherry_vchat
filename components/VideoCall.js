@@ -9,171 +9,51 @@ import { Box, Button, Grid, IconButton } from "@mui/material";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { useRouter } from "next/router";
 import { Assignment, Share, SwitchCamera } from "@mui/icons-material";
+import Websocket from "@/utils/Websocket";
 
 const VideoCall = ({ roomID, user_id }) => {
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [usingRearCamera, setUsingRearCamera] = useState(false);
-  const [stream, setStream] = useState(null);
-  const [peers, setPeers] = useState([]);
-  const socketRef = useRef();
+  const [stream, setStream] = useState();
   const userVideoRef = useRef();
-  const peersRef = useRef([]);
-  const getVideoConstraints = () => ({
-    video: {
-      facingMode: usingRearCamera ? "environment" : "user",
-    },
-    audio: true,
-  });
+  const [peers, setPeers] = useState([]);
 
   useEffect(() => {
-    console.log("Connecting to socket...");
-    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-      query: { userID: user_id, roomID },
-      path: "/groupvchat",
-    });
-
-    socketRef.current.on("connect", () => {
-      console.log("Socket connected:", socketRef.current.id);
-    });
-
-    socketRef.current.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
-    });
-
-    socketRef.current.emit("join room", { roomID, userID: user_id });
-
-    startMediaStream();
-
-    socketRef.current.on("all-users", (users) => {
-      console.log("Received all-users event:", users);
-      const peers = [];
-      users.forEach((userID) => {
-        const peer = createPeer(userID, user_id, stream);
-        peersRef.current.push({
-          peerID: userID,
-          peer,
-        });
-        peers.push(peer);
-      });
-      setPeers(peers);
-    });
-
-    socketRef.current.on("user joined", (payload) => {
-      console.log("User joined:", payload);
-      const peer = addPeer(payload.signal, payload.callerID, stream);
-      peersRef.current.push({
-        peerID: payload.callerID,
-        peer,
-      });
-      setPeers((users) => [...users, peer]);
-    });
-
-    socketRef.current.on("receiving returned signal", (payload) => {
-      console.log("Receiving returned signal:", payload);
-      const item = peersRef.current.find((p) => p.peerID === payload.id);
-      if (item) item.peer.signal(payload.signal);
-    });
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-      peersRef.current.forEach(({ peer }) => peer.destroy());
-    };
-  }, []);
-
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          facingMode: usingRearCamera ? "environment" : "user",
-        },
-        audio: true,
-      })
-      .then((VDOstream) => {
-        setStream(VDOstream);
-        if (userVideoRef.current) {
-          userVideoRef.current.srcObject = VDOstream;
-        }
-      });
+    getUserMedia();
   }, [usingRearCamera]);
 
-  useEffect(() => {
-    if (socketRef.current) {
-      socketRef.current.emit("media updation", {
-        audio: audioEnabled,
-        video: videoEnabled,
-        id: user_id,
-      });
-    }
-  }, [videoEnabled, audioEnabled]);
+  // useEffect(() => {
+  //   if (socketRef.current) {
+  //     socketRef.current.emit("media updation", {
+  //       audio: audioEnabled,
+  //       video: videoEnabled,
+  //       id: user_id,
+  //     });
+  //   }
+  // }, [videoEnabled, audioEnabled]);
 
-  const startMediaStream = async () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
-
-    const newStream = await navigator.mediaDevices.getUserMedia(
-      getVideoConstraints()
-    );
-    setStream(newStream);
-    if (userVideoRef.current) {
-      userVideoRef.current.srcObject = newStream;
-    }
-  };
-
-  const createPeer = (userToSignal, callerID, stream) => {
-    const peer = new Peer({
-      initiator: true,
-      trickle: false,
-      stream,
+  const getUserMedia = () => {
+    const constraints = {
+      video: true,
+      // video: {
+      //   facingMode: usingRearCamera ? "environment" : "user",
+      // },
+      audio: true,
+    };
+    navigator.mediaDevices.getUserMedia(constraints).then((vdo) => {
+      setStream(vdo);
+      if (userVideoRef.current) {
+        userVideoRef.current.srcObject = vdo;
+      }
+      // if (connectionRef.current) {
+      //   const videoTrack = vdo.getVideoTracks()[0];
+      //   const sender = connectionRef.current.peer
+      //     .getSenders()
+      //     .find((s) => s.track.kind === "video");
+      //   sender.replaceTrack(videoTrack);
+      // }
     });
-
-    peer.on("signal", (signal) => {
-      socketRef.current.emit("sending signal", {
-        userToSignal,
-        callerID,
-        signal,
-      });
-    });
-
-    peer.on("stream", (remoteStream) => {
-      console.log("Received remote stream");
-      // Handle the remote stream
-    });
-
-    return peer;
-  };
-
-  const addPeer = (incomingSignal, callerID, stream) => {
-    const peer = new Peer({
-      initiator: false,
-      trickle: false,
-      stream,
-    });
-
-    peer.on("signal", (signal) => {
-      socketRef.current.emit("returning signal", {
-        signal,
-        callerID,
-        userID: user_id,
-      });
-    });
-
-    peer.on("stream", (remoteStream) => {
-      console.log("Received remote stream");
-      // Handle the remote stream
-    });
-
-    if (incomingSignal) {
-      peer.signal(incomingSignal);
-    }
-
-    return peer;
   };
 
   const toggleVideo = () => {
@@ -250,14 +130,7 @@ const VideoCall = ({ roomID, user_id }) => {
             />
           </Box>
         </Grid>
-
-        {peers.map((peer, index) => {
-          return (
-            <Grid key={index} item lg={3} md={3} sm={6} xs={4}>
-              <Video peer={peer} />
-            </Grid>
-          );
-        })}
+        {usingRearCamera && <Websocket props={{ user_id, roomID, stream }} />}
       </Grid>
 
       <Box
@@ -304,42 +177,6 @@ const VideoCall = ({ roomID, user_id }) => {
           </Button>
         </CopyToClipboard>
       </Box>
-    </Box>
-  );
-};
-
-const Video = ({ peer }) => {
-  const ref = useRef();
-
-  useEffect(() => {
-    peer.on("stream", (stream) => {
-      if (ref.current) {
-        ref.current.srcObject = stream;
-      }
-    });
-  }, [peer]);
-  console.log(ref, "ref");
-  return (
-    <Box
-      sx={{
-        width: { lg: "300px", md: "300px", sm: "300px", xs: "100px" },
-        height: {
-          lg: "300px",
-          md: "300px",
-          sm: "300px",
-          xs: "100px",
-        },
-        borderRadius: "10px",
-        background: "black",
-        paddingY: 1,
-      }}
-    >
-      <video
-        ref={ref}
-        autoPlay
-        playsInline
-        style={{ width: "100%", height: "100%", borderRadius: "10px" }}
-      />
     </Box>
   );
 };
