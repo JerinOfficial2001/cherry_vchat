@@ -64,3 +64,16 @@ body {
   margin: 0px;
   height: 100%;
 }
+.loadingBtn {
+  width: 20px;
+  height: 20px;
+  animation: animate 2s linear infinite;
+}
+@keyframes animate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
