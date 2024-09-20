@@ -47,7 +47,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="border-2 border-[#808080] shadow-custom-grey  max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8  bg-white dark:bg-[#3a3a3a] absolute right-0 bottom-0 m-auto h-max right-0 left-0 top-0">
+    <div className="border-2 border-[#808080] shadow-custom-grey  max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8  bg-white dark:bg-[#3a3a3a] absolute bottom-0 m-auto h-max right-0 left-0 top-0">
       <form className="my-8" onSubmit={handleSubmit}>
         <div className=" mb-4">
           <div className="mb-4">
