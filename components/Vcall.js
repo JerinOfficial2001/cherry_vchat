@@ -88,19 +88,23 @@ function Vcall() {
       },
       audio: true,
     };
-    navigator.mediaDevices.getUserMedia(constraints).then((vdo) => {
-      setStream(vdo);
-      if (myVideo.current) {
-        myVideo.current.srcObject = vdo;
-      }
-      if (connectionRef.current) {
-        const videoTrack = vdo.getVideoTracks()[0];
-        const sender = connectionRef.current.peer
-          .getSenders()
-          .find((s) => s.track.kind === "video");
-        sender.replaceTrack(videoTrack);
-      }
-    });
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia(constraints).then((vdo) => {
+        setStream(vdo);
+        if (myVideo.current) {
+          myVideo.current.srcObject = vdo;
+        }
+        if (connectionRef.current) {
+          const videoTrack = vdo.getVideoTracks()[0];
+          const sender = connectionRef.current.peer
+            .getSenders()
+            .find((s) => s.track.kind === "video");
+          sender.replaceTrack(videoTrack);
+        }
+      });
+    } else {
+      alert("getUserMedia is not supported on this browser.");
+    }
   };
 
   const callUser = (id) => {
